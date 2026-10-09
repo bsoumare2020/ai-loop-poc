@@ -107,6 +107,16 @@ jobs:
           name: codex-review
           path: .codex-review
 
+      # Required by CLAUDE_CODE_SUBPROCESS_ENV_SCRUB (token scrub + subprocess isolation).
+      # Ubuntu 24.04 blocks unprivileged user namespaces by default; allow them on this throwaway VM.
+      - name: Install bubblewrap
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          bwrap --ro-bind / / --dev /dev --proc /proc true && echo "bwrap OK"
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
